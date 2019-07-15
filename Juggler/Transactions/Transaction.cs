@@ -9,10 +9,12 @@
     {
         private readonly TransactionActions actions;
         private readonly IScope<TransactionActions> scope;
+        private readonly Action<Exception> exceptionHandler;
         private TransactionState state;
 
-        private Transaction(IsolationLevel isolationLevel)
+        private Transaction(IsolationLevel isolationLevel, Action<Exception> exceptionHandler)
         {
+            this.exceptionHandler = exceptionHandler;
             switch (isolationLevel)
             {
                 case IsolationLevel.Attach:
@@ -36,12 +38,18 @@
 
         public static void Execute(IsolationLevel level, Action<Transaction> action)
         {
+            Execute(level, action, _ => { });
+        }
+
+        public static void Execute(IsolationLevel level, Action<Transaction> action,
+            Action<Exception> exceptionHandler)
+        {
             if (action == null)
             {
                 throw new ArgumentNullException(nameof(action));
             }
 
-            using (var transaction = new Transaction(level))
+            using (var transaction = new Transaction(level, exceptionHandler))
             {
                 action(transaction);
                 transaction.Commit();
@@ -74,8 +82,7 @@
             this.state = TransactionState.Disposing;
             if (currentState != TransactionState.Committed)
             {
-                // TODO: trace exception
-                this.actions.Rollback(_ => { });
+                this.actions.Rollback(exceptionHandler);
             }
 
             if (this.scope != null)
