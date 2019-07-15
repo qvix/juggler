@@ -139,5 +139,25 @@ namespace JugglerTests
             Assert.AreEqual(0, value);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void TransactionShouldCheckAction()
+        {
+            Transaction.Execute(null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void TransactionShouldCheckRollbackAction()
+        {
+            Transaction.Execute(transaction => { transaction.AddRollback(null); });
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void TransactionShouldCheckExceptionHandler()
+        {
+            Transaction.Execute(IsolationLevel.Attach, null, transaction => { transaction.AddRollback(null); });
+        }
     }
 }

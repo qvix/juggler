@@ -38,15 +38,19 @@
 
         public static void Execute(IsolationLevel level, Action<Transaction> action)
         {
-            Execute(level, action, _ => { });
+            Execute(level, _ => { }, action);
         }
 
-        public static void Execute(IsolationLevel level, Action<Transaction> action,
-            Action<Exception> exceptionHandler)
+        public static void Execute(IsolationLevel level, Action<Exception> exceptionHandler, Action<Transaction> action)
         {
             if (action == null)
             {
                 throw new ArgumentNullException(nameof(action));
+            }
+
+            if (exceptionHandler == null)
+            {
+                throw new ArgumentNullException(nameof(exceptionHandler));
             }
 
             using (var transaction = new Transaction(level, exceptionHandler))
@@ -58,7 +62,7 @@
 
         public void AddRollback(Action rollbackAction)
         {
-            this.actions.AddRollback(rollbackAction);
+            this.actions.AddRollback(rollbackAction ?? throw new ArgumentNullException(nameof(rollbackAction)));
         }
 
         private void Commit()
